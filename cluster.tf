@@ -29,51 +29,16 @@ resource "libvirt_network" "k8s_network" {
   addresses = ["192.168.122.0/24"]
 }
 
-# Resize the base Ubuntu image to 80GB
-resource "null_resource" "resize_ubuntu_image" {
-  provisioner "local-exec" {
-    command = <<EOT
-    set -e
-
-    IMAGE_DIR="/var/lib/libvirt/images"
-    IMAGE_NAME="ubuntu-22.04.qcow2"
-    IMAGE_URL="http://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
-
-    mkdir -p "$IMAGE_DIR"
-    IMAGE_PATH="$IMAGE_DIR/$IMAGE_NAME"
-
-    # Download the image if it does not exist
-    if [ ! -f "$IMAGE_PATH" ]; then
-      echo "Downloading base image..."
-      wget -O "$IMAGE_PATH" "$IMAGE_URL"
-    fi
-
-    # Resize the image if needed
-    if [ -f "$IMAGE_PATH" ]; then
-      echo "Checking current size..."
-      CURRENT_SIZE=$(qemu-img info --output=json "$IMAGE_PATH" | jq -r '.["virtual-size"]' || echo "0")
-      DESIRED_SIZE=$((80 * 1024 * 1024 * 1024)) # 80GB
-
-      if [ "$CURRENT_SIZE" -lt "$DESIRED_SIZE" ]; then
-        echo "Resizing image to 80GB..."
-        qemu-img resize "$IMAGE_PATH" 80G
-      else
-        echo "Image is already the desired size or larger."
-      fi
-    else
-      echo "Error: Image file not found after download."
-      exit 1
-    fi
-    EOT
-  }
+# Base Ubuntu Image
+module "base_image" {
+  source = "./modules/base_image"
 }
 
-# Base Ubuntu Image
 resource "libvirt_volume" "ubuntu_image" {
-  depends_on = [null_resource.resize_ubuntu_image]
-  name       = "ubuntu-22.04.qcow2"
+  depends_on = [module.base_image]
+  name       = "ubuntu-24.04.qcow2"
   pool       = "default"
-  source     = "/var/lib/libvirt/images/ubuntu-22.04.qcow2"
+  source     = module.base_image.base_image_path
   format     = "qcow2"
 }
 
