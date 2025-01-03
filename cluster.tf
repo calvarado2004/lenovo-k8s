@@ -27,6 +27,7 @@ resource "libvirt_network" "k8s_network" {
   domain = "k8s.local"
   mode   = "nat"
   addresses = ["192.168.122.0/24"]
+  autostart = true
 }
 
 # Base Ubuntu Image
