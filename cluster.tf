@@ -135,7 +135,7 @@ resource "libvirt_volume" "worker_block_200gb" {
   name           = "worker-${count.index}-block-200gb.qcow2"
   pool           = "default"
   format         = "qcow2"
-  size           = 200 # Size in GB
+  size           = 214748364800 # size in bytes, known issue with libvirt_volume
 }
 
 # Additional Block Storage drive for Portworx KVDB
@@ -144,7 +144,7 @@ resource "libvirt_volume" "worker_block_12gb" {
   name           = "worker-${count.index}-block-12gb.qcow2"
   pool           = "default"
   format         = "qcow2"
-  size           = 12 # Size in GB
+  size           = 12884901888 # size in bytes, known issue with libvirt_volume
 }
 
 # Define Worker Nodes with Additional Disks
